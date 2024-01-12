@@ -1,14 +1,15 @@
-package main
+package config
 
 import (
 	"errors"
 	"fmt"
+	"github.com/alexflint/go-arg"
 	"gopkg.in/yaml.v3"
 	"io/fs"
 	"os"
 )
 
-const CFG_FILE_CONTENT = `profile: prod
+const CfgFileContent = `profile: prod
 root: /opt
 fail_on_error: false
 commands:
@@ -33,9 +34,24 @@ suites:
       ProcessPlanBrowser: cst
 `
 
+func ParseCmdArgs() *ProgramArguments {
+	args := &ProgramArguments{}
+	arg.MustParse(args)
+	return args
+}
+
+type ProgramArguments struct {
+	Build           []string `arg:"-b,--build" help:"Execute build "`
+	TestUnit        []string `arg:"-u,--test-unit" help:"Execute [unit tests] / [unit test by name]"`
+	TestIntegration []string `arg:"-i,--test-integration" help:"Execute [integ tests] / [integ test by name]"`
+	Suite           []string `arg:"-s,--suite" help:"Execute suite defined in CFG"`
+	Custom          []string `arg:"-c,--custom" help:"Execute custom command defined in CFG"`
+	Restart         bool     `arg:"-r,--restart" help:"Execute restart"`
+}
+
 type Suite struct {
 	Restart bool
-	Build   *map[string]string
+	Build   map[string]string
 	Custom  []string
 }
 
@@ -63,10 +79,10 @@ type AppConfig struct {
 	Suites      map[string]Suite
 }
 
-func createAppConfig() (*AppConfig, error) {
+func CreateAppConfig() (*AppConfig, error) {
 	dir, err := os.UserHomeDir()
 	if err != nil {
-		return nil, errors.New("user HomeDirectory is not available")
+		return nil, fmt.Errorf("user HomeDirectory is not available. %w", err)
 	}
 	var appConfigDir = fmt.Sprintf("%s/.wc_builder", dir)
 	var configPath = fmt.Sprintf("%s/cfg.yml", appConfigDir)
@@ -81,7 +97,7 @@ func createAppConfig() (*AppConfig, error) {
 
 	bytes, err := os.ReadFile(configPath)
 	if err != nil {
-		return nil, errors.New("could not read configuration content")
+		return nil, fmt.Errorf("could not read configuration content. %w", err)
 	}
 
 	c := &AppConfig{}
@@ -96,15 +112,15 @@ func createAppConfig() (*AppConfig, error) {
 func createFileWhenConfigMissing(appConfigDir string, configPath string) error {
 	err := os.Mkdir(appConfigDir, os.ModePerm)
 	if errors.Is(err, fs.ErrNotExist) {
-		return errors.New("could not create configuration directory in user home dir")
+		return fmt.Errorf("could not create configuration directory in user home dir. %w", err)
 	}
 	configFile, err := os.Create(configPath)
 	if err != nil {
-		return errors.New("could not create configuration file in config dir")
+		return fmt.Errorf("could not create configuration file in config dir. %w", err)
 	}
-	_, err = configFile.WriteString(CFG_FILE_CONTENT)
+	_, err = configFile.WriteString(CfgFileContent)
 	if err != nil {
-		return errors.New("could not write configuration to config file")
+		return fmt.Errorf("could not write configuration to config file. %w", err)
 	}
 	return nil
 }

@@ -2,31 +2,38 @@ package main
 
 import (
 	"fmt"
-	"github.com/alexflint/go-arg"
+	"os"
+	"wnc_builder/config"
+	"wnc_builder/executor"
+	"wnc_builder/module"
 )
 
-type ProgramArguments struct {
-	Build           []string `arg:"-b,--build" help:"Execute build "`
-	TestUnit        []string `arg:"-u,--test-unit" help:"Execute [unit tests] / [unit test by name]"`
-	TestIntegration []string `arg:"-i,--test-integration" help:"Execute [integ tests] / [integ test by name]"`
-	Suite           []string `arg:"-s,--suite" help:"Execute suite defined in CFG"`
-	Custom          []string `arg:"-c,--custom" help:"Execute custom command defined in CFG"`
-	Restart         bool     `arg:"-r,--restart" help:"Execute restart"`
-}
-
 func main() {
-
-	_, err := createAppConfig()
+	appConfig, err := config.CreateAppConfig()
 	if err != nil {
 		fmt.Println(err.Error())
+		os.Exit(1)
 	}
-	_ = parseCmdArgs()
-	println()
+	cmdArgs := config.ParseCmdArgs()
 
-}
+	moduleInfos, err := module.CalculateModuleInfo(appConfig)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 
-func parseCmdArgs() *ProgramArguments {
-	args := &ProgramArguments{}
-	arg.MustParse(args)
-	return args
+	taskBuilder := executor.NewTaskBuilder(appConfig, moduleInfos)
+	tasks, err := taskBuilder.BuildTasks(cmdArgs)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	taskExecutor := executor.NewTaskExecutor(appConfig, moduleInfos)
+	err = taskExecutor.RunTasks(tasks)
+	taskExecutor.PrintSummary(tasks)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }
