@@ -16,12 +16,14 @@ type ProgramArguments struct {
 
 func main() {
 
-	_, err := createAppConfig()
+	appConfig, err := createAppConfig()
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	_ = parseCmdArgs()
 	println()
+
+	buildModuleInfos(appConfig, nil)
 
 }
 

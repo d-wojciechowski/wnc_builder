@@ -66,7 +66,7 @@ type AppConfig struct {
 func createAppConfig() (*AppConfig, error) {
 	dir, err := os.UserHomeDir()
 	if err != nil {
-		return nil, errors.New("user HomeDirectory is not available")
+		return nil, fmt.Errorf("user HomeDirectory is not available. %w", err)
 	}
 	var appConfigDir = fmt.Sprintf("%s/.wc_builder", dir)
 	var configPath = fmt.Sprintf("%s/cfg.yml", appConfigDir)
@@ -81,7 +81,7 @@ func createAppConfig() (*AppConfig, error) {
 
 	bytes, err := os.ReadFile(configPath)
 	if err != nil {
-		return nil, errors.New("could not read configuration content")
+		return nil, fmt.Errorf("could not read configuration content. %w", err)
 	}
 
 	c := &AppConfig{}
@@ -96,15 +96,15 @@ func createAppConfig() (*AppConfig, error) {
 func createFileWhenConfigMissing(appConfigDir string, configPath string) error {
 	err := os.Mkdir(appConfigDir, os.ModePerm)
 	if errors.Is(err, fs.ErrNotExist) {
-		return errors.New("could not create configuration directory in user home dir")
+		return fmt.Errorf("could not create configuration directory in user home dir. %w", err)
 	}
 	configFile, err := os.Create(configPath)
 	if err != nil {
-		return errors.New("could not create configuration file in config dir")
+		return fmt.Errorf("could not create configuration file in config dir. %w", err)
 	}
 	_, err = configFile.WriteString(CFG_FILE_CONTENT)
 	if err != nil {
-		return errors.New("could not write configuration to config file")
+		return fmt.Errorf("could not write configuration to config file. %w", err)
 	}
 	return nil
 }

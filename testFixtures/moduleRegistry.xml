@@ -1,0 +1,9 @@
+<!-- comment -->
+<ModuleRegistry>
+  <Module location='a/path/to/ModuleA' name='a/ModuleA' description='ModuleA'>
+    <installer id='test' />
+  </Module>
+  <Module location='a/path/to/ModuleB' name='a/ModuleB' description='ModuleB'>
+  </Module>
+  <Module location='a/path/to/ModuleC' name='a/ModuleC' description='ModuleC'/>
+</ModuleRegistry>
