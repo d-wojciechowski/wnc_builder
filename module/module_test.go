@@ -1,10 +1,11 @@
-package main
+package module
 
 import (
 	"os"
 	"reflect"
 	"strings"
 	"testing"
+	"wnc_builder/config"
 )
 
 func buildModulePath(part string) string {
@@ -13,7 +14,7 @@ func buildModulePath(part string) string {
 
 func Test_buildModuleInfos(t *testing.T) {
 	type args struct {
-		cfg         *AppConfig
+		cfg         *config.AppConfig
 		calculators []func(info *ModuleInfo) error
 	}
 	tests := []struct {
@@ -24,9 +25,9 @@ func Test_buildModuleInfos(t *testing.T) {
 	}{
 		{
 			name: "Should parse order correctly with fixture",
-			args: args{cfg: &AppConfig{
+			args: args{cfg: &config.AppConfig{
 				Root: "/opt",
-				Input: Input{
+				Input: config.Input{
 					ModuleRegistry: "testFixtures/moduleRegistry.xml",
 				},
 			}, calculators: []func(info *ModuleInfo) error{},
@@ -51,9 +52,9 @@ func Test_buildModuleInfos(t *testing.T) {
 		},
 		{
 			name: "Should parse apply calculator when available",
-			args: args{cfg: &AppConfig{
+			args: args{cfg: &config.AppConfig{
 				Root: "/opt",
-				Input: Input{
+				Input: config.Input{
 					ModuleRegistry: "testFixtures/moduleRegistry.xml",
 				},
 			}, calculators: []func(info *ModuleInfo) error{func(info *ModuleInfo) error {
@@ -81,8 +82,8 @@ func Test_buildModuleInfos(t *testing.T) {
 		},
 		{
 			name: "Should not parse when incorrect file specified",
-			args: args{cfg: &AppConfig{
-				Input: Input{
+			args: args{cfg: &config.AppConfig{
+				Input: config.Input{
 					BuildOrder: "testFixtures/notExisting.xml",
 				},
 			}, calculators: []func(info *ModuleInfo) error{},
@@ -107,7 +108,7 @@ func Test_buildModuleInfos(t *testing.T) {
 
 func Test_getBuildOrderMap(t *testing.T) {
 	type args struct {
-		cfg *AppConfig
+		cfg *config.AppConfig
 	}
 	tests := []struct {
 		name    string
@@ -117,8 +118,8 @@ func Test_getBuildOrderMap(t *testing.T) {
 	}{
 		{
 			name: "Should parse order correctly with fixture",
-			args: args{&AppConfig{
-				Input: Input{
+			args: args{&config.AppConfig{
+				Input: config.Input{
 					BuildOrder: "testFixtures/orderFile.includes",
 				},
 			}},
@@ -127,8 +128,8 @@ func Test_getBuildOrderMap(t *testing.T) {
 		},
 		{
 			name: "Should not parse when incorrect file specified",
-			args: args{&AppConfig{
-				Input: Input{
+			args: args{&config.AppConfig{
+				Input: config.Input{
 					BuildOrder: "testFixtures/notExisting.includes",
 				},
 			}},
@@ -152,7 +153,7 @@ func Test_getBuildOrderMap(t *testing.T) {
 
 func Test_buildSourceCalculator(t *testing.T) {
 	type args struct {
-		cfg *AppConfig
+		cfg *config.AppConfig
 	}
 	type preparation struct {
 		root     string
@@ -168,19 +169,19 @@ func Test_buildSourceCalculator(t *testing.T) {
 		{
 			name: "Should create expected sources for test profile",
 			args: args{
-				cfg: &AppConfig{Profile: "test"},
+				cfg: &config.AppConfig{Profile: "test"},
 			},
 			prep: preparation{
 				root:     "",
 				children: nil,
 			},
-			want:    TEST_SOURCES,
+			want:    config.TEST_SOURCES,
 			wantErr: false,
 		},
 		{
 			name: "Should create a list of sources",
 			args: args{
-				cfg: &AppConfig{Profile: "prod"},
+				cfg: &config.AppConfig{Profile: "prod"},
 			},
 			prep: preparation{
 				root:     ".",
@@ -213,7 +214,10 @@ func Test_buildSourceCalculator(t *testing.T) {
 				t.Errorf("buildSourceCalculator() = %v, want %v", moduleInfo.Sources, tt.want)
 			}
 			for _, path := range toRemove {
-				os.Remove(path)
+				err := os.Remove(path)
+				if err != nil {
+					return
+				}
 			}
 		})
 	}

@@ -1,4 +1,4 @@
-package main
+package module
 
 import (
 	"bufio"
@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"wnc_builder/config"
 )
 
 type ModuleInfo struct {
@@ -28,7 +29,7 @@ type modules struct {
 
 var orderPattern, _ = regexp.Compile("^#? ?(\\w+)/(\\w+)\n?")
 
-func CalculateModuleInfo(cfg *AppConfig) (map[string]ModuleInfo, error) {
+func CalculateModuleInfo(cfg *config.AppConfig) (map[string]ModuleInfo, error) {
 	orderCalculator, err := buildOrderCalculator(cfg)
 	if err != nil {
 		return nil, err
@@ -42,7 +43,7 @@ func CalculateModuleInfo(cfg *AppConfig) (map[string]ModuleInfo, error) {
 	return infos, nil
 }
 
-func buildOrderCalculator(cfg *AppConfig) (func(info *ModuleInfo) error, error) {
+func buildOrderCalculator(cfg *config.AppConfig) (func(info *ModuleInfo) error, error) {
 	result, err := buildOrderMap(cfg)
 	if err != nil {
 		return nil, err
@@ -53,7 +54,7 @@ func buildOrderCalculator(cfg *AppConfig) (func(info *ModuleInfo) error, error) 
 	}, nil
 }
 
-func buildOrderMap(cfg *AppConfig) (map[string]int, error) {
+func buildOrderMap(cfg *config.AppConfig) (map[string]int, error) {
 	buildOrderPath := cfg.Input.BuildOrder
 	idx := 0
 
@@ -77,15 +78,15 @@ func buildOrderMap(cfg *AppConfig) (map[string]int, error) {
 	return result, nil
 }
 
-func buildSourceCalculator(cfg *AppConfig) func(info *ModuleInfo) error {
+func buildSourceCalculator(cfg *config.AppConfig) func(info *ModuleInfo) error {
 	return func(info *ModuleInfo) error {
 		if cfg.Profile == "test" {
-			info.Sources = TEST_SOURCES
+			info.Sources = config.TEST_SOURCES
 			return nil
 		}
 		entries, err := os.ReadDir(info.Location)
 		if err != nil {
-			return fmt.Errorf("could not navigate through folder location: %s. %w", info.Location, err)
+			return nil
 		}
 		sources := make([]string, 0, 3)
 		for _, entry := range entries {
@@ -98,7 +99,7 @@ func buildSourceCalculator(cfg *AppConfig) func(info *ModuleInfo) error {
 	}
 }
 
-func buildModuleInfos(cfg *AppConfig, calculators []func(info *ModuleInfo) error) (map[string]ModuleInfo, error) {
+func buildModuleInfos(cfg *config.AppConfig, calculators []func(info *ModuleInfo) error) (map[string]ModuleInfo, error) {
 	moduleRegistryPath := cfg.Input.ModuleRegistry
 	fileByteContent, _ := os.ReadFile(moduleRegistryPath)
 

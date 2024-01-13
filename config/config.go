@@ -1,8 +1,9 @@
-package main
+package config
 
 import (
 	"errors"
 	"fmt"
+	"github.com/alexflint/go-arg"
 	"gopkg.in/yaml.v3"
 	"io/fs"
 	"os"
@@ -32,6 +33,21 @@ suites:
       MPMLinkCommon: cst
       ProcessPlanBrowser: cst
 `
+
+func ParseCmdArgs() *ProgramArguments {
+	args := &ProgramArguments{}
+	arg.MustParse(args)
+	return args
+}
+
+type ProgramArguments struct {
+	Build           []string `arg:"-b,--build" help:"Execute build "`
+	TestUnit        []string `arg:"-u,--test-unit" help:"Execute [unit tests] / [unit test by name]"`
+	TestIntegration []string `arg:"-i,--test-integration" help:"Execute [integ tests] / [integ test by name]"`
+	Suite           []string `arg:"-s,--suite" help:"Execute suite defined in CFG"`
+	Custom          []string `arg:"-c,--custom" help:"Execute custom command defined in CFG"`
+	Restart         bool     `arg:"-r,--restart" help:"Execute restart"`
+}
 
 type Suite struct {
 	Restart bool
@@ -63,7 +79,7 @@ type AppConfig struct {
 	Suites      map[string]Suite
 }
 
-func createAppConfig() (*AppConfig, error) {
+func CreateAppConfig() (*AppConfig, error) {
 	dir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("user HomeDirectory is not available. %w", err)
