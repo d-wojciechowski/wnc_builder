@@ -20,7 +20,7 @@ func Test_buildModuleInfos(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    map[string]ModuleInfo
+		want    map[string]*ModuleInfo
 		wantErr bool
 	}{
 		{
@@ -28,11 +28,11 @@ func Test_buildModuleInfos(t *testing.T) {
 			args: args{cfg: &config.AppConfig{
 				Root: "/opt",
 				Input: config.Input{
-					ModuleRegistry: "testFixtures/moduleRegistry.xml",
+					ModuleRegistry: "../testFixtures/moduleRegistry.xml",
 				},
 			}, calculators: []func(info *ModuleInfo) error{},
 			},
-			want: map[string]ModuleInfo{"ModuleA": {
+			want: map[string]*ModuleInfo{"ModuleA": {
 				Name:     "ModuleA",
 				Location: buildModulePath("ModuleA"),
 				Order:    0,
@@ -55,14 +55,14 @@ func Test_buildModuleInfos(t *testing.T) {
 			args: args{cfg: &config.AppConfig{
 				Root: "/opt",
 				Input: config.Input{
-					ModuleRegistry: "testFixtures/moduleRegistry.xml",
+					ModuleRegistry: "../testFixtures/moduleRegistry.xml",
 				},
 			}, calculators: []func(info *ModuleInfo) error{func(info *ModuleInfo) error {
 				info.Order = 1
 				return nil
 			}},
 			},
-			want: map[string]ModuleInfo{"ModuleA": {
+			want: map[string]*ModuleInfo{"ModuleA": {
 				Name:     "ModuleA",
 				Location: buildModulePath("ModuleA"),
 				Order:    1,
@@ -84,7 +84,7 @@ func Test_buildModuleInfos(t *testing.T) {
 			name: "Should not parse when incorrect file specified",
 			args: args{cfg: &config.AppConfig{
 				Input: config.Input{
-					BuildOrder: "testFixtures/notExisting.xml",
+					BuildOrder: "../testFixtures/notExisting.xml",
 				},
 			}, calculators: []func(info *ModuleInfo) error{},
 			},
@@ -120,7 +120,7 @@ func Test_getBuildOrderMap(t *testing.T) {
 			name: "Should parse order correctly with fixture",
 			args: args{&config.AppConfig{
 				Input: config.Input{
-					BuildOrder: "testFixtures/orderFile.includes",
+					BuildOrder: "../testFixtures/orderFile.includes",
 				},
 			}},
 			want:    map[string]int{"ModuleA": 0, "ModuleB": 1},
@@ -130,7 +130,7 @@ func Test_getBuildOrderMap(t *testing.T) {
 			name: "Should not parse when incorrect file specified",
 			args: args{&config.AppConfig{
 				Input: config.Input{
-					BuildOrder: "testFixtures/notExisting.includes",
+					BuildOrder: "../testFixtures/notExisting.includes",
 				},
 			}},
 			want:    nil,
@@ -175,7 +175,7 @@ func Test_buildSourceCalculator(t *testing.T) {
 				root:     "",
 				children: nil,
 			},
-			want:    config.TEST_SOURCES,
+			want:    config.TestSources,
 			wantErr: false,
 		},
 		{

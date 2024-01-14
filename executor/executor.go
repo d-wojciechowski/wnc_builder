@@ -1,33 +1,19 @@
 package executor
 
 import (
-	"errors"
 	"fmt"
+	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 	"wnc_builder/config"
 	"wnc_builder/module"
 )
 
-type ExecutionStatus int
-
-const (
-	PREPARED ExecutionStatus = iota
-	RUNNING
-	COMPLETED
-	FAILED
-)
-
-func (t ExecutionStatus) String() string {
-	return [...]string{"PREPARED", "RUNNING", "COMPLETED", "FAILED"}[t]
-}
-func (t ExecutionStatus) EnumIndex() int {
-	return int(t)
-}
-
 type Command struct {
 	Command  string
-	Status   ExecutionStatus
+	Status   config.ExecutionStatus
 	Duration time.Duration
 }
 
@@ -38,180 +24,89 @@ type Task struct {
 	targets  string
 }
 
-type taskBuilder struct {
-	appConfig     config.AppConfig
+type executor struct {
+	appConfig     *config.AppConfig
 	modulesConfig map[string]*module.ModuleInfo
 }
 
-type TaskBuilder interface {
-	BuildTasks(arguments *config.ProgramArguments) []*Task
-}
-
-func NewTaskBuilder(appConfig config.AppConfig, modulesConfig map[string]*module.ModuleInfo) TaskBuilder {
-	builder := taskBuilder{
+func NewTaskExecutor(appConfig *config.AppConfig, modulesConfig map[string]*module.ModuleInfo) Executor {
+	executor := executor{
 		appConfig:     appConfig,
 		modulesConfig: modulesConfig,
 	}
-	return &builder
+	return &executor
 }
 
-func (tb *taskBuilder) buildSuiteTasks(arguments *config.ProgramArguments) []*Task {
-	tasks := make([]*Task, 0, 1)
-
-	return tasks
+type Executor interface {
+	RunTasks(tasks []*Task) error
+	RunCommands(tasks *Task) error
+	PrintSummary(tasks []*Task)
 }
 
-func (tb *taskBuilder) buildExplicitTasks(arguments *config.ProgramArguments) ([]*Task, error) {
-	tasks := make([]*Task, 0, 1)
-	if len(arguments.Build) > 0 {
-		for _, moduleSpec := range arguments.Build {
-			moduleInfo, targets, err := tb.getTaskSpec(moduleSpec)
-			if err != nil {
-				return nil, err
-			}
-			task := Task{
-				Target:  config.BUILD,
-				Module:  moduleInfo,
-				targets: targets,
-			}
-			task.Commands = tb.createBuildCommands(task)
-			tasks = append(tasks, &task)
-		}
+func (e *executor) RunTasks(tasks []*Task) error {
+	for _, task := range tasks {
+		return e.RunCommands(task)
 	}
-	if len(arguments.TestUnit) > 0 {
-		for _, moduleSpec := range arguments.TestUnit {
-			moduleInfo, targets, err := tb.getTaskSpec(moduleSpec)
-			if err != nil {
-				return nil, err
-			}
-			task := Task{
-				Target:  config.TEST_UNIT,
-				Module:  moduleInfo,
-				targets: targets,
-			}
-			task.Commands = []*Command{tb.createTestCommands(task)}
-			tasks = append(tasks, &task)
-
-		}
-	}
-	if len(arguments.TestIntegration) > 0 {
-		for _, moduleSpec := range arguments.TestUnit {
-			moduleInfo, targets, err := tb.getTaskSpec(moduleSpec)
-			if err != nil {
-				return nil, err
-			}
-			task := Task{
-				Target:  config.TEST_INTEGRATION,
-				Module:  moduleInfo,
-				targets: targets,
-			}
-			task.Commands = []*Command{tb.createTestCommands(task)}
-			tasks = append(tasks, &task)
-
-		}
-	}
-	if len(arguments.Custom) > 0 {
-		for _, task := range arguments.Custom {
-			task := Task{
-				Target:  config.CUSTOM,
-				targets: task,
-			}
-			task.Commands = []*Command{tb.createTestCommands(task)}
-			tasks = append(tasks, &task)
-		}
-	}
-	if arguments.Restart {
-		task := Task{
-			Target:   config.RESTART,
-			Commands: []*Command{{Command: tb.appConfig.Commands.OOTB.Restart}},
-		}
-		tasks = append(tasks, &task)
-	}
-	return tasks, nil
+	return nil
 }
 
-func (tb *taskBuilder) getTaskSpec(moduleSpec string) (*module.ModuleInfo, string, error) {
-	spec := strings.Split(moduleSpec, "_")
-	moduleId := spec[0]
-	targets := spec[1]
-	definedModule, err := tb.findModuleById(moduleId)
+func (e *executor) RunCommands(tasks *Task) error {
+	for _, command := range tasks.Commands {
+		return e.runCommand(command)
+	}
+	return nil
+}
+
+func (e *executor) PrintSummary(tasks []*Task) {
+	fmt.Println(strings.Repeat("-", config.CommandSize))
+	fmt.Println("Application finished successfully")
+	for _, task := range tasks {
+		for _, command := range task.Commands {
+			fmt.Printf("%s %s %s in %s - %s\n", command.Status.Color(), command.Status, config.NoColor, command.Duration, command.Command)
+		}
+	}
+}
+
+func (e *executor) runCommand(command *Command) error {
+	e.printHeader(command)
+	if command.Status != config.Prepared {
+		return nil
+	}
+	command.Status = config.Running
+	start := time.Now()
+	toBeRun := e.preparecommand(command)
+	toBeRun.Stdout = os.Stdout
+	toBeRun.Stderr = os.Stderr
+	err := toBeRun.Run()
+	command.Duration = time.Since(start)
 	if err != nil {
-		return nil, "", err
-	}
-	return definedModule, targets, nil
-}
-
-func (tb *taskBuilder) findModuleById(id string) (*module.ModuleInfo, error) {
-	moduleName := tb.appConfig.Aliases[id]
-	if moduleName == "" {
-		moduleByDirectCall := tb.modulesConfig[id]
-		if moduleByDirectCall != nil {
-			return moduleByDirectCall, nil
-		} else {
-			return nil, errors.New(fmt.Sprintf("Module alias %s not found.", id))
+		command.Status = config.Failed
+		fmt.Printf("Command %s failed with code %s.\n", command.Command, toBeRun.Err)
+		if e.appConfig.FailOnError {
+			return err
 		}
-	}
-	return tb.modulesConfig[moduleName], nil
-}
-
-func (tb *taskBuilder) BuildTasks(arguments *config.ProgramArguments) ([]*Task, error) {
-	if len(arguments.Suite) > 0 {
-		return tb.buildSuiteTasks(arguments), nil
 	} else {
-		return tb.buildExplicitTasks(arguments)
+		command.Status = config.Completed
+		fmt.Printf("Command %s completed successfully.\n", command.Command)
 	}
+	e.printFooter(command)
+	return nil
 }
 
-func (tb *taskBuilder) createBuildCommands(task Task) []*Command {
-	commands := make([]*Command, 0, 5)
-	if strings.Contains(task.targets, config.SRC_SYMBOL) {
-		if strings.Contains(task.targets, config.CLOBBER_SYMBOL) {
-			command := Command{
-				Command: fmt.Sprintf(config.CLOBBER_COMMAND_FORMAT, task.Module.Location, config.SRC_ALIASES[config.SRC_SYMBOL]),
-			}
-			commands = append(commands, &command)
-		}
-		command := Command{
-			Command: fmt.Sprintf(config.BUILD_COMMAND_FORMAT, task.Module.Location, config.SRC_ALIASES[config.SRC_SYMBOL]),
-		}
-		commands = append(commands, &command)
-	}
-	if strings.Contains(task.targets, config.SRC_TEST_SYMBOL) {
-		if strings.Contains(task.targets, config.CLOBBER_SYMBOL) {
-			command := Command{
-				Command: fmt.Sprintf(config.CLOBBER_COMMAND_FORMAT, task.Module.Location, config.SRC_ALIASES[config.SRC_TEST_SYMBOL]),
-			}
-			commands = append(commands, &command)
-		}
-		command := Command{
-			Command: fmt.Sprintf(config.BUILD_COMMAND_FORMAT, task.Module.Location, config.SRC_ALIASES[config.SRC_TEST_SYMBOL]),
-		}
-		commands = append(commands, &command)
-	}
-	if strings.Contains(task.targets, config.SRC_WEB_SYMBOL) {
-		command := Command{
-			Command: fmt.Sprintf(config.BUILD_COMMAND_FORMAT, task.Module.Location, config.SRC_ALIASES[config.SRC_WEB_SYMBOL]),
-		}
-		commands = append(commands, &command)
-	}
-	return commands
+func (e *executor) printHeader(command *Command) {
+	println(strings.Repeat("-", config.CommandSize))
+	message := "Executing command " + command.Command
+	dashCount := ((config.CommandSize - len(message)) / 2) - 1
+	println(strings.Repeat("-", dashCount) + " " + message + " " + strings.Repeat("-", dashCount))
+	println(strings.Repeat("-", config.CommandSize))
 }
 
-func (tb *taskBuilder) createTestCommands(task Task) *Command {
-	testCommand := fmt.Sprintf(config.TEST_COMMAND_FORMAT, strings.ReplaceAll(task.Target.String(), "_", "."), task.Module.Location, config.SRC_ALIASES[config.SRC_TEST_SYMBOL])
-	if task.targets != "" {
-		testCommand = testCommand + fmt.Sprintf(config.SPECIFIC_TEST_COMMAND_FORMAT, task.targets)
-	}
-	return &Command{Command: testCommand}
-}
+func (e *executor) printFooter(command *Command) {}
 
-func (tb *taskBuilder) createCustomCommands(task Task) (*Command, error) {
-	command := tb.appConfig.Commands.Custom[task.targets]
-	if command != "" {
-		return &Command{Command: command}, nil
+func (e *executor) preparecommand(cmd *Command) *exec.Cmd {
+	if runtime.GOOS == "windows" {
+		return exec.Command("cmd", "/U", "/c", cmd.Command)
+	} else {
+		return exec.Command("sh", "-c", cmd.Command)
 	}
-	if tb.appConfig.FailOnError {
-		return nil, fmt.Errorf("command %s not found in custom commands", task.targets)
-	}
-	return &Command{Command: task.targets, Status: FAILED}, nil
 }

@@ -29,7 +29,7 @@ type modules struct {
 
 var orderPattern, _ = regexp.Compile("^#? ?(\\w+)/(\\w+)\n?")
 
-func CalculateModuleInfo(cfg *config.AppConfig) (map[string]ModuleInfo, error) {
+func CalculateModuleInfo(cfg *config.AppConfig) (map[string]*ModuleInfo, error) {
 	orderCalculator, err := buildOrderCalculator(cfg)
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func buildOrderMap(cfg *config.AppConfig) (map[string]int, error) {
 func buildSourceCalculator(cfg *config.AppConfig) func(info *ModuleInfo) error {
 	return func(info *ModuleInfo) error {
 		if cfg.Profile == "test" {
-			info.Sources = config.TEST_SOURCES
+			info.Sources = config.TestSources
 			return nil
 		}
 		entries, err := os.ReadDir(info.Location)
@@ -99,7 +99,7 @@ func buildSourceCalculator(cfg *config.AppConfig) func(info *ModuleInfo) error {
 	}
 }
 
-func buildModuleInfos(cfg *config.AppConfig, calculators []func(info *ModuleInfo) error) (map[string]ModuleInfo, error) {
+func buildModuleInfos(cfg *config.AppConfig, calculators []func(info *ModuleInfo) error) (map[string]*ModuleInfo, error) {
 	moduleRegistryPath := cfg.Input.ModuleRegistry
 	fileByteContent, _ := os.ReadFile(moduleRegistryPath)
 
@@ -109,7 +109,7 @@ func buildModuleInfos(cfg *config.AppConfig, calculators []func(info *ModuleInfo
 		return nil, fmt.Errorf("module info could not be unmarshalled. %w", err)
 	}
 
-	result := make(map[string]ModuleInfo, len(modulesFromXml.Modules))
+	result := make(map[string]*ModuleInfo, len(modulesFromXml.Modules))
 	for _, xmlModule := range modulesFromXml.Modules {
 		name := strings.Split(xmlModule.Name, "/")[1]
 		absLocation := strings.Join([]string{cfg.Root, xmlModule.Location}, "/")
@@ -125,7 +125,7 @@ func buildModuleInfos(cfg *config.AppConfig, calculators []func(info *ModuleInfo
 				return nil, err
 			}
 		}
-		result[name] = module
+		result[name] = &module
 	}
 	return result, nil
 }

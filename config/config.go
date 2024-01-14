@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-const CFG_FILE_CONTENT = `profile: prod
+const CfgFileContent = `profile: prod
 root: /opt
 fail_on_error: false
 commands:
@@ -51,7 +51,7 @@ type ProgramArguments struct {
 
 type Suite struct {
 	Restart bool
-	Build   *map[string]string
+	Build   map[string]string
 	Custom  []string
 }
 
@@ -118,7 +118,7 @@ func createFileWhenConfigMissing(appConfigDir string, configPath string) error {
 	if err != nil {
 		return fmt.Errorf("could not create configuration file in config dir. %w", err)
 	}
-	_, err = configFile.WriteString(CFG_FILE_CONTENT)
+	_, err = configFile.WriteString(CfgFileContent)
 	if err != nil {
 		return fmt.Errorf("could not write configuration to config file. %w", err)
 	}
