@@ -45,14 +45,20 @@ type Executor interface {
 
 func (e *executor) RunTasks(tasks []*Task) error {
 	for _, task := range tasks {
-		return e.RunCommands(task)
+		err := e.RunCommands(task)
+		if e.appConfig.FailOnError && err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func (e *executor) RunCommands(tasks *Task) error {
 	for _, command := range tasks.Commands {
-		return e.runCommand(command)
+		err := e.runCommand(command)
+		if e.appConfig.FailOnError && err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -97,6 +103,9 @@ func (e *executor) printHeader(command *Command) {
 	println(strings.Repeat("-", config.CommandSize))
 	message := "Executing command " + command.Command
 	dashCount := ((config.CommandSize - len(message)) / 2) - 1
+	if dashCount < 0 {
+		dashCount = 0
+	}
 	println(strings.Repeat("-", dashCount) + " " + message + " " + strings.Repeat("-", dashCount))
 	println(strings.Repeat("-", config.CommandSize))
 }

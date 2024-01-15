@@ -27,7 +27,7 @@ func NewTaskBuilder(appConfig *config.AppConfig, modulesConfig map[string]*modul
 
 func (tb *taskBuilder) buildSuiteTasks(arguments *config.ProgramArguments) ([]*Task, error) {
 	tasks := make([]*Task, 0, 1)
-	if len(arguments.Suite) > 0 && arguments.Suite[0] != "" {
+	if arguments.Suite != nil && len(arguments.Suite) > 0 && arguments.Suite[0] != "" {
 		suite := tb.appConfig.Suites[arguments.Suite[0]]
 		for moduleSpec, targets := range suite.Build {
 			moduleInfo, err := tb.findModuleById(moduleSpec)
@@ -42,13 +42,15 @@ func (tb *taskBuilder) buildSuiteTasks(arguments *config.ProgramArguments) ([]*T
 			task.Commands = tb.createBuildCommands(task)
 			tasks = append(tasks, &task)
 		}
-		for _, task := range suite.Custom {
-			task := Task{
-				Target:  config.Custom,
-				targets: task,
+		if suite.Custom != nil {
+			for _, task := range suite.Custom {
+				task := Task{
+					Target:  config.Custom,
+					targets: task,
+				}
+				task.Commands = []*Command{tb.createTestCommands(task)}
+				tasks = append(tasks, &task)
 			}
-			task.Commands = []*Command{tb.createTestCommands(task)}
-			tasks = append(tasks, &task)
 		}
 		if suite.Restart {
 			task := Task{
@@ -64,7 +66,7 @@ func (tb *taskBuilder) buildSuiteTasks(arguments *config.ProgramArguments) ([]*T
 
 func (tb *taskBuilder) buildExplicitTasks(arguments *config.ProgramArguments) ([]*Task, error) {
 	tasks := make([]*Task, 0, 1)
-	if len(arguments.Build) > 0 {
+	if arguments.Build != nil && len(arguments.Build) > 0 {
 		for _, moduleSpec := range arguments.Build {
 			moduleInfo, targets, err := tb.getTaskSpec(moduleSpec)
 			if err != nil {
@@ -79,7 +81,7 @@ func (tb *taskBuilder) buildExplicitTasks(arguments *config.ProgramArguments) ([
 			tasks = append(tasks, &task)
 		}
 	}
-	if len(arguments.TestUnit) > 0 {
+	if arguments.TestUnit != nil && len(arguments.TestUnit) > 0 {
 		for _, moduleSpec := range arguments.TestUnit {
 			moduleInfo, targets, err := tb.getTaskSpec(moduleSpec)
 			if err != nil {
@@ -95,7 +97,7 @@ func (tb *taskBuilder) buildExplicitTasks(arguments *config.ProgramArguments) ([
 
 		}
 	}
-	if len(arguments.TestIntegration) > 0 {
+	if arguments.TestIntegration != nil && len(arguments.TestIntegration) > 0 {
 		for _, moduleSpec := range arguments.TestUnit {
 			moduleInfo, targets, err := tb.getTaskSpec(moduleSpec)
 			if err != nil {
@@ -111,13 +113,17 @@ func (tb *taskBuilder) buildExplicitTasks(arguments *config.ProgramArguments) ([
 
 		}
 	}
-	if len(arguments.Custom) > 0 {
+	if arguments.Custom != nil && len(arguments.Custom) > 0 {
 		for _, task := range arguments.Custom {
 			task := Task{
 				Target:  config.Custom,
 				targets: task,
 			}
-			task.Commands = []*Command{tb.createTestCommands(task)}
+			command, err := tb.createCustomCommands(task)
+			if err != nil {
+				return nil, err
+			}
+			task.Commands = []*Command{command}
 			tasks = append(tasks, &task)
 		}
 	}
