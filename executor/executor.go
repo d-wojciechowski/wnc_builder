@@ -24,6 +24,12 @@ type Task struct {
 	targets  string
 }
 
+type Executor interface {
+	RunTasks(tasks []*Task) error
+	RunCommands(tasks *Task) error
+	PrintSummary(tasks []*Task)
+}
+
 type executor struct {
 	appConfig     *config.AppConfig
 	modulesConfig map[string]*module.ModuleInfo
@@ -35,12 +41,6 @@ func NewTaskExecutor(appConfig *config.AppConfig, modulesConfig map[string]*modu
 		modulesConfig: modulesConfig,
 	}
 	return &executor
-}
-
-type Executor interface {
-	RunTasks(tasks []*Task) error
-	RunCommands(tasks *Task) error
-	PrintSummary(tasks []*Task)
 }
 
 func (e *executor) RunTasks(tasks []*Task) error {
@@ -68,9 +68,19 @@ func (e *executor) PrintSummary(tasks []*Task) {
 	fmt.Println("Application finished successfully")
 	for _, task := range tasks {
 		for _, command := range task.Commands {
-			fmt.Printf("%s %s %s in %s - %s\n", command.Status.Color(), command.Status, config.NoColor, command.Duration, command.Command)
+			fmt.Printf("%s %s %s in %s - %s\n", command.Status.Color(), command.Status, config.NoColor, roundDuration(command.Duration, time.Millisecond), command.Command)
 		}
 	}
+}
+
+func roundDuration(d time.Duration, precision time.Duration) time.Duration {
+	if precision <= 0 {
+		return d
+	}
+	// Calculate the rounding factor
+	rounding := precision / 2
+	// Round the duration to the nearest multiple of precision
+	return (d + rounding) / precision * precision
 }
 
 func (e *executor) runCommand(command *Command) error {
@@ -80,10 +90,12 @@ func (e *executor) runCommand(command *Command) error {
 	}
 	command.Status = config.Running
 	start := time.Now()
-	toBeRun := e.preparecommand(command)
+
+	toBeRun := e.prepareCommand(command)
 	toBeRun.Stdout = os.Stdout
 	toBeRun.Stderr = os.Stderr
 	err := toBeRun.Run()
+
 	command.Duration = time.Since(start)
 	if err != nil {
 		command.Status = config.Failed
@@ -100,19 +112,24 @@ func (e *executor) runCommand(command *Command) error {
 }
 
 func (e *executor) printHeader(command *Command) {
-	println(strings.Repeat("-", config.CommandSize))
+	fmt.Println(strings.Repeat(config.CmdFiller, config.CommandSize))
 	message := "Executing command " + command.Command
-	dashCount := ((config.CommandSize - len(message)) / 2) - 1
+	dashCombo := e.calculateFiller(len(message))
+	fmt.Println(strings.Join([]string{dashCombo, message, dashCombo}, " "))
+	fmt.Println(strings.Repeat(config.CmdFiller, config.CommandSize))
+}
+
+func (e *executor) calculateFiller(messageLen int) string {
+	dashCount := ((config.CommandSize - messageLen) / 2) - 1
 	if dashCount < 0 {
 		dashCount = 0
 	}
-	println(strings.Repeat("-", dashCount) + " " + message + " " + strings.Repeat("-", dashCount))
-	println(strings.Repeat("-", config.CommandSize))
+	return strings.Repeat(config.CmdFiller, dashCount)
 }
 
 func (e *executor) printFooter(command *Command) {}
 
-func (e *executor) preparecommand(cmd *Command) *exec.Cmd {
+func (e *executor) prepareCommand(cmd *Command) *exec.Cmd {
 	if runtime.GOOS == "windows" {
 		return exec.Command("cmd", "/U", "/c", cmd.Command)
 	} else {

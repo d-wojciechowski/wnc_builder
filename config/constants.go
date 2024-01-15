@@ -6,6 +6,7 @@ const OkColor = "\033[0;34m"
 const NoColor = "\033[0m"
 
 const CommandSize = 128
+const CmdFiller = "-"
 
 const SRC = "src"
 const SrcTest = "src_test"
