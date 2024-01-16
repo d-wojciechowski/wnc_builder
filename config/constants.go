@@ -2,7 +2,7 @@ package config
 
 const ErrColor = "\033[0;31m"
 const WarningColor = "\033[0;43m"
-const OkColor = "\033[0;34m"
+const OkColor = "\033[0;32m"
 const NoColor = "\033[0m"
 
 const CommandSize = 128
@@ -17,7 +17,7 @@ const SrcWebSymbol = "w"
 const SrcTestSymbol = "t"
 const ClobberSymbol = "c"
 
-var SrcAliases = map[string]string{"s": SRC, "t": SrcTest, "w": SrcWeb}
+var SrcAliases = map[string]string{SrcSymbol: SRC, SrcTestSymbol: SrcTest, SrcWebSymbol: SrcWeb}
 var TestSources = []string{SRC, SrcTest, SrcWeb}
 
 const BuildCommandFormat = "ant -f %s/%s/build.xml"

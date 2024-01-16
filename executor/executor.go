@@ -68,7 +68,8 @@ func (e *executor) PrintSummary(tasks []*Task) {
 	fmt.Println("Application finished successfully")
 	for _, task := range tasks {
 		for _, command := range task.Commands {
-			fmt.Printf("%s %s %s in %s - %s\n", command.Status.Color(), command.Status, config.NoColor, roundDuration(command.Duration, time.Millisecond), command.Command)
+			roundedDuration := roundDuration(command.Duration, time.Millisecond*10)
+			fmt.Printf("%s %s %s in %s - %s\n", command.Status.Color(), command.Status, config.NoColor, roundedDuration, command.Command)
 		}
 	}
 }
@@ -77,9 +78,7 @@ func roundDuration(d time.Duration, precision time.Duration) time.Duration {
 	if precision <= 0 {
 		return d
 	}
-	// Calculate the rounding factor
 	rounding := precision / 2
-	// Round the duration to the nearest multiple of precision
 	return (d + rounding) / precision * precision
 }
 

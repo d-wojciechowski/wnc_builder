@@ -269,3 +269,31 @@ func Test_executor_runCommand(t *testing.T) {
 		})
 	}
 }
+
+func Test_roundDuration(t *testing.T) {
+	type args struct {
+		d         time.Duration
+		precision time.Duration
+	}
+	tests := []struct {
+		name string
+		args args
+		want time.Duration
+	}{
+		{
+			name: "Should limit duration to 2 significant digits",
+			args: args{
+				d:         time.Microsecond * 1234567,
+				precision: time.Millisecond * 10,
+			},
+			want: time.Millisecond * 1230,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := roundDuration(tt.args.d, tt.args.precision); got != tt.want {
+				t.Errorf("roundDuration() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
