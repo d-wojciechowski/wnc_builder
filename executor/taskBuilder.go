@@ -98,7 +98,7 @@ func (tb *taskBuilder) buildExplicitTasks(arguments *config.ProgramArguments) ([
 		}
 	}
 	if arguments.TestIntegration != nil && len(arguments.TestIntegration) > 0 {
-		for _, moduleSpec := range arguments.TestUnit {
+		for _, moduleSpec := range arguments.TestIntegration {
 			moduleInfo, targets, err := tb.getTaskSpec(moduleSpec)
 			if err != nil {
 				return nil, err
