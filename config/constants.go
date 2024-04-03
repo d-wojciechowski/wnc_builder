@@ -11,13 +11,36 @@ const CmdFiller = "-"
 const SRC = "src"
 const SrcTest = "src_test"
 const SrcWeb = "src_web"
+const SrcSelenium = "src_selenium"
+const SrcUpgrade = "src_upgrade"
+const SrcHybrid = "src_hybrid"
 
 const SrcSymbol = "s"
 const SrcWebSymbol = "w"
 const SrcTestSymbol = "t"
 const ClobberSymbol = "c"
+const SeleniumSymbol = "f"
+const UpgradeSymbol = "u"
+const HybridSymbol = "h"
 
-var SrcAliases = map[string]string{SrcSymbol: SRC, SrcTestSymbol: SrcTest, SrcWebSymbol: SrcWeb}
+var SrcAliases = map[string]string{
+	SrcSymbol:      SRC,
+	SrcTestSymbol:  SrcTest,
+	SrcWebSymbol:   SrcWeb,
+	SeleniumSymbol: SrcSelenium,
+	UpgradeSymbol:  SrcUpgrade,
+	HybridSymbol:   SrcHybrid,
+}
+var ClobberableSources = map[string]string{
+	SrcSymbol:      SRC,
+	SrcTestSymbol:  SrcTest,
+	SeleniumSymbol: SrcSelenium,
+	UpgradeSymbol:  SrcUpgrade,
+	HybridSymbol:   SrcHybrid,
+}
+var NonClobberableSources = map[string]string{
+	SrcWebSymbol: SrcWeb,
+}
 var TestSources = []string{SRC, SrcTest, SrcWeb}
 
 const BuildCommandFormat = "ant -f %s/%s/build.xml"

@@ -171,35 +171,28 @@ func (tb *taskBuilder) BuildTasks(arguments *config.ProgramArguments) ([]*Task, 
 
 func (tb *taskBuilder) createBuildCommands(task Task) []*Command {
 	commands := make([]*Command, 0, 5)
-	if strings.Contains(task.targets, config.SrcSymbol) {
-		if strings.Contains(task.targets, config.ClobberSymbol) {
+	for key, value := range config.ClobberableSources {
+		if strings.Contains(task.targets, key) {
+			if strings.Contains(task.targets, config.ClobberSymbol) {
+				command := Command{
+					Command: fmt.Sprintf(config.ClobberCommandFormat, task.Module.Location, value),
+				}
+				commands = append(commands, &command)
+			}
 			command := Command{
-				Command: fmt.Sprintf(config.ClobberCommandFormat, task.Module.Location, config.SrcAliases[config.SrcSymbol]),
+				Command: fmt.Sprintf(config.BuildCommandFormat, task.Module.Location, value),
 			}
 			commands = append(commands, &command)
 		}
-		command := Command{
-			Command: fmt.Sprintf(config.BuildCommandFormat, task.Module.Location, config.SrcAliases[config.SrcSymbol]),
-		}
-		commands = append(commands, &command)
 	}
-	if strings.Contains(task.targets, config.SrcTestSymbol) {
-		if strings.Contains(task.targets, config.ClobberSymbol) {
+
+	for key, value := range config.NonClobberableSources {
+		if strings.Contains(task.targets, key) {
 			command := Command{
-				Command: fmt.Sprintf(config.ClobberCommandFormat, task.Module.Location, config.SrcAliases[config.SrcTestSymbol]),
+				Command: fmt.Sprintf(config.BuildCommandFormat, task.Module.Location, value),
 			}
 			commands = append(commands, &command)
 		}
-		command := Command{
-			Command: fmt.Sprintf(config.BuildCommandFormat, task.Module.Location, config.SrcAliases[config.SrcTestSymbol]),
-		}
-		commands = append(commands, &command)
-	}
-	if strings.Contains(task.targets, config.SrcWebSymbol) {
-		command := Command{
-			Command: fmt.Sprintf(config.BuildCommandFormat, task.Module.Location, config.SrcAliases[config.SrcWebSymbol]),
-		}
-		commands = append(commands, &command)
 	}
 	return commands
 }
