@@ -47,6 +47,7 @@ type ProgramArguments struct {
 	Suite           []string `arg:"-s,--suite" help:"Execute suite defined in CFG"`
 	Custom          []string `arg:"-c,--custom" help:"Execute custom command defined in CFG"`
 	Restart         bool     `arg:"-r,--restart" help:"Execute restart"`
+	Dry             bool     `arg:"-d,--dry" help:"Just generate commands."`
 }
 
 type Suite struct {

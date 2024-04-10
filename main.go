@@ -30,7 +30,9 @@ func main() {
 	}
 
 	taskExecutor := executor.NewTaskExecutor(appConfig, moduleInfos)
-	err = taskExecutor.RunTasks(tasks)
+	if !cmdArgs.Dry {
+		err = taskExecutor.RunTasks(tasks)
+	}
 	taskExecutor.PrintSummary(tasks)
 	if err != nil {
 		fmt.Println(err.Error())
