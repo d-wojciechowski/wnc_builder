@@ -127,6 +127,22 @@ func (tb *taskBuilder) buildExplicitTasks(arguments *config.ProgramArguments) ([
 			tasks = append(tasks, &task)
 		}
 	}
+	if arguments.NumKey != nil && len(arguments.NumKey) > 0 {
+		for _, task := range arguments.NumKey {
+			moduleInfo, _, err := tb.getTaskSpec(task)
+			if err != nil {
+				return nil, err
+			}
+			task := Task{
+				Target:  config.NumKey,
+				targets: task,
+				Module:  moduleInfo,
+			}
+			command := tb.createNumKeyCommand(task)
+			task.Commands = []*Command{command}
+			tasks = append(tasks, &task)
+		}
+	}
 	if arguments.Restart {
 		task := Task{
 			Target:   config.Restart,
@@ -140,7 +156,10 @@ func (tb *taskBuilder) buildExplicitTasks(arguments *config.ProgramArguments) ([
 func (tb *taskBuilder) getTaskSpec(moduleSpec string) (*module.ModuleInfo, string, error) {
 	spec := strings.Split(moduleSpec, "_")
 	moduleId := spec[0]
-	targets := spec[1]
+	var targets string
+	if len(spec) > 1 {
+		targets = spec[1]
+	}
 	definedModule, err := tb.findModuleById(moduleId)
 	if err != nil {
 		return nil, "", err
@@ -202,6 +221,11 @@ func (tb *taskBuilder) createTestCommands(task Task) *Command {
 	if task.targets != "" {
 		testCommand = testCommand + fmt.Sprintf(config.SpecificTestCommandFormat, task.targets)
 	}
+	return &Command{Command: testCommand}
+}
+
+func (tb *taskBuilder) createNumKeyCommand(task Task) *Command {
+	testCommand := fmt.Sprintf(config.NumKeyBuildCommandFormat, task.Module.Location, config.SrcAliases[config.SrcSymbol])
 	return &Command{Command: testCommand}
 }
 

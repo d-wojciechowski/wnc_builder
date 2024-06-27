@@ -46,6 +46,7 @@ type ProgramArguments struct {
 	TestIntegration []string `arg:"-i,--test-integration" help:"Execute [integ tests] / [integ test by name]"`
 	Suite           []string `arg:"-s,--suite" help:"Execute suite defined in CFG"`
 	Custom          []string `arg:"-c,--custom" help:"Execute custom command defined in CFG"`
+	NumKey          []string `arg:"-n,--num-key" help:"Execute numkey build"`
 	Restart         bool     `arg:"-r,--restart" help:"Execute restart"`
 	Dry             bool     `arg:"-d,--dry" help:"Just generate commands."`
 }

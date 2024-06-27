@@ -47,3 +47,6 @@ const BuildCommandFormat = "ant -f %s/%s/build.xml"
 const ClobberCommandFormat = "ant clobber -f %s/%s/build.xml"
 const TestCommandFormat = "ant %s -f %s/%s/build.xml"
 const SpecificTestCommandFormat = " -Dtest.includes=**/%s"
+const NumKeyBuildCommandFormat = `ant -v -f /opt/wnc/tools_vs/build/commonUtils.xml darjeeling.start_dbserver
+ant -f %s/%s/build.xml clean clobber all -Ddarjeeling.updnumkey=true
+ant -v -f /opt/wnc/tools_vs/build/commonUtils.xml darjeeling.stop_dbserver`

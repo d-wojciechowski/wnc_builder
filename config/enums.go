@@ -28,6 +28,7 @@ const (
 	SuiteTarget
 	Restart
 	Custom
+	NumKey
 )
 
 func (t Target) String() string {

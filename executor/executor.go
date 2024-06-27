@@ -69,7 +69,7 @@ func (e *executor) PrintSummary(tasks []*Task) {
 	for _, task := range tasks {
 		for _, command := range task.Commands {
 			roundedDuration := roundDuration(command.Duration, time.Millisecond*10)
-			fmt.Printf("%s %s %s in %s - %s\n", command.Status.Color(), command.Status, config.NoColor, roundedDuration, command.Command)
+			fmt.Printf("%s %s %s in %s - %s\n", command.Status.Color(), command.Status, config.NoColor, roundedDuration, strings.Replace(command.Command, "\n", " \\n ", -1))
 		}
 	}
 }
@@ -98,13 +98,13 @@ func (e *executor) runCommand(command *Command) error {
 	command.Duration = time.Since(start)
 	if err != nil {
 		command.Status = config.Failed
-		fmt.Printf("Command %s failed with code %s.\n", command.Command, toBeRun.Err)
+		fmt.Printf("Command %s failed with code %s.\n", strings.Replace(command.Command, "\n", " \\n ", -1), toBeRun.Err)
 		if e.appConfig.FailOnError {
 			return err
 		}
 	} else {
 		command.Status = config.Completed
-		fmt.Printf("Command %s completed successfully.\n", command.Command)
+		fmt.Printf("Command %s completed successfully.\n", strings.Replace(command.Command, "\n", "\\n", -1))
 	}
 	e.printFooter(command)
 	return nil
