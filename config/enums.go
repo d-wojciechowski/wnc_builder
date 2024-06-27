@@ -25,20 +25,19 @@ const (
 	Build Target = iota
 	TestUnit
 	TestIntegration
-	SuiteTarget
 	Restart
 	Custom
 	NumKey
 )
 
 func (t Target) String() string {
-	return [...]string{"build", "test_unit", "test_integration", "suite", "restart", "custom"}[t]
+	return [...]string{"build", "test_unit", "test_integration", "restart", "custom"}[t]
 }
 func (t Target) ModuleDependent() []string {
-	return []string{"build", "test_unit", "test_integration", "suite"}
+	return []string{"build", "test_unit", "test_integration"}
 }
 func (t Target) ModuleAgnostic() []string {
-	return []string{"build", "test_unit", "test_integration", "suite"}
+	return []string{"build", "test_unit", "test_integration"}
 }
 func (t Target) EnumIndex() int {
 	return int(t)

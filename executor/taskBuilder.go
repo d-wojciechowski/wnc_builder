@@ -25,45 +25,6 @@ func NewTaskBuilder(appConfig *config.AppConfig, modulesConfig map[string]*modul
 	return &builder
 }
 
-func (tb *taskBuilder) buildSuiteTasks(arguments *config.ProgramArguments) ([]*Task, error) {
-	tasks := make([]*Task, 0, 1)
-	if arguments.Suite != nil && len(arguments.Suite) > 0 && arguments.Suite[0] != "" {
-		suite := tb.appConfig.Suites[arguments.Suite[0]]
-		for moduleSpec, targets := range suite.Build {
-			moduleInfo, err := tb.findModuleById(moduleSpec)
-			if err != nil {
-				return nil, err
-			}
-			task := Task{
-				Target:  config.Build,
-				Module:  moduleInfo,
-				targets: targets,
-			}
-			task.Commands = tb.createBuildCommands(task)
-			tasks = append(tasks, &task)
-		}
-		if suite.Custom != nil {
-			for _, task := range suite.Custom {
-				task := Task{
-					Target:  config.Custom,
-					targets: task,
-				}
-				task.Commands = []*Command{tb.createTestCommands(task)}
-				tasks = append(tasks, &task)
-			}
-		}
-		if suite.Restart {
-			task := Task{
-				Target:   config.Restart,
-				Commands: []*Command{{Command: tb.appConfig.Commands.OOTB.Restart}},
-			}
-			tasks = append(tasks, &task)
-		}
-		return tasks, nil
-	}
-	return tasks, fmt.Errorf("could not find suite with name %s", arguments.Suite[0])
-}
-
 func (tb *taskBuilder) buildExplicitTasks(arguments *config.ProgramArguments) ([]*Task, error) {
 	tasks := make([]*Task, 0, 1)
 	if arguments.Build != nil && len(arguments.Build) > 0 {
@@ -181,11 +142,7 @@ func (tb *taskBuilder) findModuleById(id string) (*module.ModuleInfo, error) {
 }
 
 func (tb *taskBuilder) BuildTasks(arguments *config.ProgramArguments) ([]*Task, error) {
-	if len(arguments.Suite) > 0 {
-		return tb.buildSuiteTasks(arguments)
-	} else {
-		return tb.buildExplicitTasks(arguments)
-	}
+	return tb.buildExplicitTasks(arguments)
 }
 
 func (tb *taskBuilder) createBuildCommands(task Task) []*Command {

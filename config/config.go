@@ -25,13 +25,6 @@ aliases:
   mpmlc: MPMLinkCommon
   ppb: ProcessPlanBrowser
   ass: Associative
-suites:
-  current:
-    restart: true
-    build:
-      MPMLink: cst
-      MPMLinkCommon: cst
-      ProcessPlanBrowser: cst
 `
 
 func ParseCmdArgs() *ProgramArguments {
@@ -44,17 +37,10 @@ type ProgramArguments struct {
 	Build           []string `arg:"-b,--build" help:"Execute build "`
 	TestUnit        []string `arg:"-u,--test-unit" help:"Execute [unit tests] / [unit test by name]"`
 	TestIntegration []string `arg:"-i,--test-integration" help:"Execute [integ tests] / [integ test by name]"`
-	Suite           []string `arg:"-s,--suite" help:"Execute suite defined in CFG"`
 	Custom          []string `arg:"-c,--custom" help:"Execute custom command defined in CFG"`
 	NumKey          []string `arg:"-n,--num-key" help:"Execute numkey build"`
 	Restart         bool     `arg:"-r,--restart" help:"Execute restart"`
 	Dry             bool     `arg:"-d,--dry" help:"Just generate commands."`
-}
-
-type Suite struct {
-	Restart bool
-	Build   map[string]string
-	Custom  []string
 }
 
 type OOTBCommands struct {
@@ -78,7 +64,6 @@ type AppConfig struct {
 	Commands    Commands
 	Input       Input
 	Aliases     map[string]string
-	Suites      map[string]Suite
 }
 
 func CreateAppConfig() (*AppConfig, error) {
