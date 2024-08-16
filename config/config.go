@@ -37,6 +37,7 @@ type ProgramArguments struct {
 	Build           []string `arg:"-b,--build" help:"Execute build "`
 	TestUnit        []string `arg:"-u,--test-unit" help:"Execute [unit tests] / [unit test by name]"`
 	TestIntegration []string `arg:"-i,--test-integration" help:"Execute [integ tests] / [integ test by name]"`
+	TestSelenium    []string `arg:"-s,--test-selenium" help:"Execute [selenium tests] / [selenium test by name]"`
 	Custom          []string `arg:"-c,--custom" help:"Execute custom command defined in CFG"`
 	NumKey          []string `arg:"-n,--num-key" help:"Execute numkey build"`
 	Restart         bool     `arg:"-r,--restart" help:"Execute restart"`

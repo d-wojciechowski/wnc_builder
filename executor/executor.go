@@ -66,12 +66,16 @@ func (e *executor) RunCommands(tasks *Task) error {
 func (e *executor) PrintSummary(tasks []*Task) {
 	fmt.Println(strings.Repeat("-", config.CommandSize))
 	fmt.Println("Application finished successfully")
+
+	duration := time.Duration(0)
 	for _, task := range tasks {
 		for _, command := range task.Commands {
+			duration = duration + command.Duration
 			roundedDuration := roundDuration(command.Duration, time.Millisecond*10)
 			fmt.Printf("%s %s %s in %s - %s\n", command.Status.Color(), command.Status, config.NoColor, roundedDuration, strings.Replace(command.Command, "\n", " \\n ", -1))
 		}
 	}
+	fmt.Printf("\nTotal execution time: %s %s %s\n", config.OkColor, roundDuration(duration, time.Millisecond*10), config.NoColor)
 }
 
 func roundDuration(d time.Duration, precision time.Duration) time.Duration {

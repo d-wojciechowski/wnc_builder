@@ -74,6 +74,22 @@ func (tb *taskBuilder) buildExplicitTasks(arguments *config.ProgramArguments) ([
 
 		}
 	}
+	if arguments.TestSelenium != nil && len(arguments.TestSelenium) > 0 {
+		for _, moduleSpec := range arguments.TestSelenium {
+			moduleInfo, targets, err := tb.getTaskSpec(moduleSpec)
+			if err != nil {
+				return nil, err
+			}
+			task := Task{
+				Target:  config.TestSelenium,
+				Module:  moduleInfo,
+				targets: targets,
+			}
+			task.Commands = []*Command{tb.createTestCommands(task)}
+			tasks = append(tasks, &task)
+
+		}
+	}
 	if arguments.Custom != nil && len(arguments.Custom) > 0 {
 		for _, task := range arguments.Custom {
 			task := Task{

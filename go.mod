@@ -1,6 +1,6 @@
 module wnc_builder
 
-go 1.21
+go 1.23
 
 require (
 	github.com/alexflint/go-arg v1.4.3
